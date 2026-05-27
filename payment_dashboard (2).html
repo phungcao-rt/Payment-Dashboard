@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Payment Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0f14;--surface:#13151d;--surface2:#1a1d27;--border:#232736;--border2:#2d3245;
+  --text:#e2e4ee;--muted:#5a6080;--muted2:#8891b0;
+  --green:#22c55e;--green-bg:#071a0f;--green-dim:#14532d;
+  --red:#ef4444;--red-bg:#1c0000;--red-dim:#7f1d1d;
+  --yellow:#eab308;--yellow-bg:#1a1200;--yellow-dim:#713f12;
+  --blue:#3b82f6;--blue-bg:#0a1628;--blue-dim:#1e3a5f;
+  --orange:#f97316;--orange-bg:#1c0900;--orange-dim:#7c2d12;
+  --purple:#a78bfa;--accent:#818cf8;--accent2:#38bdf8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;font-size:13px;}
+.header{padding:20px 28px 14px;background:linear-gradient(180deg,#12141e,var(--bg));border-bottom:1px solid var(--border);}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;}
+.title{font-size:22px;font-weight:800;letter-spacing:-.5px;}
+.title em{color:var(--purple);font-style:normal;}
+.subtitle{font-size:11px;color:var(--muted);font-family:monospace;margin-top:3px;}
+.connect-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.api-input{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 10px;font-family:monospace;font-size:11px;width:300px;max-width:100%;outline:none;transition:border-color .15s;}
+.api-input:focus{border-color:var(--accent);}
+.load-btn{background:var(--accent);border:none;border-radius:6px;color:#fff;padding:5px 13px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.load-btn:disabled{opacity:.5;}
+.sync-status{font-size:10px;font-family:monospace;color:var(--muted);margin-top:4px;}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 16px;flex:1;min-width:120px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.green::before{background:var(--green);}
+.kpi.red::before{background:var(--red);}
+.kpi.yellow::before{background:var(--yellow);}
+.kpi.blue::before{background:var(--blue);}
+.kpi.orange::before{background:var(--orange);}
+.kpi.purple::before{background:var(--purple);}
+.kpi-val{font-size:20px;font-weight:800;font-family:monospace;line-height:1;}
+.kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;}
+.kpi-sub{font-size:10px;color:var(--muted2);margin-top:2px;font-family:monospace;}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);padding:0 28px;}
+.tab{padding:10px 16px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.controls{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:9px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.sw{position:relative;}
+.sw svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+input[type=search]{background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);padding:7px 11px 7px 30px;font-family:monospace;font-size:12px;outline:none;width:200px;transition:border-color .15s;}
+input[type=search]:focus{border-color:var(--accent);}
+.sep{width:1px;height:22px;background:var(--border2);margin:0 2px;}
+.fbtn{padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.fbtn:hover{border-color:var(--accent);color:var(--accent);}
+.fbtn.active{color:#fff;border-color:transparent;}
+.fbtn.fa-all.active{background:var(--accent);}
+.fbtn.fa-ready.active{background:var(--green);}
+.fbtn.fa-inv.active{background:var(--yellow);color:#000;}
+.fbtn.fa-hd.active{background:var(--red);}
+.fbtn.fa-pl.active{background:var(--purple);}
+.fbtn.fa-amount.active{background:var(--muted);}
+.sort-select{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 9px;font-family:monospace;font-size:11px;outline:none;cursor:pointer;margin-left:auto;}
+.result-count{font-size:11px;color:var(--muted);font-family:monospace;}
+.export-btn{background:var(--green-bg);border:1px solid var(--green-dim);border-radius:6px;color:var(--green);padding:5px 12px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;}
+.export-btn:hover{background:var(--green);color:#000;}
+main{padding:14px 28px;}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-top:10px;}
+table{border-collapse:collapse;width:100%;font-size:12px;}
+thead th{background:var(--surface2);color:var(--muted);font-family:monospace;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.7px;padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left;}
+tbody tr{cursor:pointer;transition:background .1s;}
+tbody tr:hover td{background:#181c2a!important;}
+tbody tr:nth-child(even) td{background:#0f1118;}
+tbody tr:nth-child(odd) td{background:var(--bg);}
+td{padding:7px 12px;border-bottom:1px solid #13151d;white-space:nowrap;vertical-align:middle;}
+td.sticky{position:sticky;left:0;z-index:5;background:var(--surface)!important;border-right:1px solid var(--border);font-weight:600;min-width:150px;max-width:190px;overflow:hidden;text-overflow:ellipsis;}
+tbody tr:hover td.sticky{background:#1a1e2e!important;}
+td.mono{font-family:monospace;}
+td.right{text-align:right;}
+td.center{text-align:center;}
+.ck{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;font-size:11px;font-weight:700;}
+.ck.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-dim);}
+.ck.no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-dim);}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:monospace;white-space:nowrap;}
+.b-ready{background:var(--green-bg);color:var(--green);border:1px solid var(--green-dim);}
+.b-amount{background:#0d0d1a;color:var(--muted2);border:1px solid var(--border2);}
+.b-warn{background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow-dim);}
+.b-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-dim);}
+.pl-tag{display:inline-flex;align-items:center;gap:3px;background:var(--red-bg);border:1px solid var(--red-dim);border-radius:4px;padding:2px 6px;font-size:10px;color:var(--red);font-family:monospace;margin:1px 2px;}
+.pl-count{background:var(--red-bg);border:1px solid var(--red-dim);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700;color:var(--red);font-family:monospace;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:24px;max-width:600px;width:92%;max-height:84vh;overflow-y:auto;position:relative;}
+.modal-x{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:4px;}
+.modal-x:hover{background:var(--surface2);}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:2px;}
+.modal-amounts{display:flex;gap:20px;margin:10px 0 14px;flex-wrap:wrap;}
+.m-amt{text-align:center;}
+.m-amt-val{font-size:22px;font-weight:800;font-family:monospace;line-height:1;}
+.m-amt-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-top:2px;}
+.cond-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.cond-box{background:var(--surface2);border-radius:8px;padding:11px 13px;border:1px solid var(--border2);}
+.cond-box.ok{border-color:var(--green-dim);background:var(--green-bg);}
+.cond-box.no{border-color:var(--red-dim);background:var(--red-bg);}
+.cond-name{font-size:11px;font-weight:700;margin-bottom:3px;}
+.cond-detail{font-size:10px;color:var(--muted2);font-family:monospace;line-height:1.6;}
+.pl-list{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-top:8px;border:1px solid var(--border2);}
+.pl-list-title{font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px;}
+.pl-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);}
+.pl-row:last-child{border-bottom:none;}
+.modal-note{font-size:11px;color:var(--muted2);font-family:monospace;background:var(--surface2);border-radius:6px;padding:8px 12px;margin-top:8px;line-height:1.6;}
+.ready-banner{background:var(--green-bg);border:1px solid var(--green-dim);border-radius:8px;padding:12px;margin-top:8px;font-size:12px;color:var(--green);font-weight:700;text-align:center;}
+.pl-camp-cards{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+.pl-camp-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;flex:1;min-width:130px;}
+.pl-camp-name{font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:3px;}
+.pl-camp-count{font-size:18px;font-weight:800;font-family:monospace;color:var(--red);}
+.pl-camp-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
+@media(max-width:640px){.header,.controls,main{padding-left:14px;padding-right:14px;}.tabs{padding:0 14px;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-row">
+    <div>
+      <div class="title">Payment <em>Dashboard</em></div>
+      <div class="subtitle">SP Team · Phung Cao · 2026</div>
+    </div>
+    <div>
+      <div class="connect-wrap">
+        <input class="api-input" id="apiUrl" placeholder="Apps Script URL de auto-sync...">
+        <button class="load-btn" id="loadBtn" onclick="loadFromApi()">&#x1F504; Sync</button>
+      </div>
+      <div class="sync-status" id="syncStatus"></div>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">&#x1F4CA; Tong quan</div>
+  <div class="tab" onclick="switchTab('pl')">&#x1F4CE; Phu luc con thieu</div>
+  <div class="tab" onclick="switchTab('inv')">&#x1F4C4; Thieu Invoice</div>
+  <div class="tab" onclick="switchTab('paid')">&#x2705; Da thanh toan</div>
+</div>
+<div id="tab-overview" class="tab-content active">
+  <div class="controls">
+    <div class="sw">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="searchInput" placeholder="Tim partner..." oninput="onSearch(this.value)">
+    </div>
+    <div class="sep"></div>
+    <button class="fbtn fa-all active" data-f="all" onclick="setFilter(this)">Tat ca</button>
+    <button class="fbtn fa-ready" data-f="ready" onclick="setFilter(this)">&#x2705; San sang TT</button>
+    <button class="fbtn fa-inv" data-f="inv" onclick="setFilter(this)">&#x1F4C4; Thieu INV</button>
+    <button class="fbtn fa-hd" data-f="hd" onclick="setFilter(this)">&#x1F4CB; Thieu HD</button>
+    <button class="fbtn fa-pl" data-f="pl" onclick="setFilter(this)">&#x1F4CE; Thieu PL</button>
+    <button class="fbtn fa-amount" data-f="amount" onclick="setFilter(this)">&#x1F4B0; Chua du $200</button>
+    <div class="sep"></div>
+    <span class="result-count" id="resultCount"></span>
+    <select class="sort-select" id="sortSelect" onchange="render()">
+      <option value="unpaid-desc">Du no (cao-thap)</option>
+      <option value="unpaid-asc">Du no (thap-cao)</option>
+      <option value="name-asc">Ten A-Z</option>
+      <option value="pl-desc">Nhieu PL thieu nhat</option>
+    </select>
+    <button class="export-btn" onclick="exportExcel()">&#x2B07; Excel</button>
+  </div>
+  <main>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th class="sticky">Partner</th>
+          <th>Chua TT (USD)</th>
+          <th>Tong Fee</th>
+          <th>Da TT</th>
+          <th>>=200$</th>
+          <th>Invoice</th>
+          <th>Hop dong</th>
+          <th>Phu luc thieu</th>
+          <th>Trang thai</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<div id="tab-pl" class="tab-content">
+  <main>
+    <div id="plCards" style="margin-top:10px"></div>
+    <div class="tbl-wrap" style="margin-top:14px">
+      <table>
+        <thead><tr>
+          <th class="sticky">Partner</th>
+          <th>Campaign thieu PL</th>
+          <th>So tien PL</th>
+          <th>Du no (chua TT)</th>
+          <th>Hop dong</th>
+        </tr></thead>
+        <tbody id="plTbody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<div id="tab-inv" class="tab-content">
+  <main>
+    <div class="tbl-wrap" style="margin-top:10px">
+      <table>
+        <thead><tr>
+          <th class="sticky">Partner</th>
+          <th>Du no (chua TT)</th>
+          <th>Thang thieu Invoice</th>
+        </tr></thead>
+        <tbody id="invTbody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="tab-paid" class="tab-content">
+  <main>
+    <div id="paidHeader" style="margin-top:10px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div style="font-size:11px;color:var(--muted);font-family:monospace" id="paidMonthLabel"></div>
+      <div style="display:flex;gap:8px" id="paidMonthBtns"></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th class="sticky">Partner</th>
+          <th>Thang</th>
+          <th>So tien thanh toan</th>
+          <th>Pub Fee thang do</th>
+        </tr></thead>
+        <tbody id="paidTbody"></tbody>
+      </table>
+    </div>
+    <div id="paidSummary" style="margin-top:12px;font-family:monospace;font-size:12px;color:var(--muted2)"></div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal()">&#x2715;</button>
+    <div class="modal-title" id="mTitle"></div>
+    <div class="modal-amounts" id="mAmounts"></div>
+    <div class="cond-grid" id="mConds"></div>
+    <div id="mPL"></div>
+    <div id="mExtra"></div>
+  </div>
+</div>
+<script>
+const STORAGE_KEY='payment_dashboard_api_url';
+const EMBEDDED={"partners":[{"name":"Oodle Digital","unpaid":3851.54,"total_fee":4676.68,"total_paid":825.14,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"Digitar Media","unpaid":3799.93,"total_fee":7651.06,"total_paid":3851.13,"cond_amount":true,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":true,"status":"San sang TT","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2026","T3/2026"]},{"name":"Sense","unpaid":2147.99,"total_fee":2147.99,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2025","T3/2025","T6/2025"]},{"name":"Prodflicks","unpaid":1801.17,"total_fee":2533.32,"total_paid":732.15,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2025","T3/2025","T4/2025","T5/2025","T6/2025"]},{"name":"Metamind","unpaid":1769.24,"total_fee":1769.24,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"Ch\u01b0a c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024","T1/2026","T2/2026","T3/2026"]},{"name":"Newcoinmedia","unpaid":1707.82,"total_fee":8348.28,"total_paid":6640.46,"cond_amount":true,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":true,"status":"San sang TT","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2026","T3/2026"]},{"name":"Paddle Waver","unpaid":1652.77,"total_fee":2253.31,"total_paid":600.54,"cond_amount":true,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":true,"status":"San sang TT","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T10/2025","T11/2025","T12/2025","T1/2026","T2/2026","T3/2026"]},{"name":"TouchPoint","unpaid":1557.25,"total_fee":8832.7,"total_paid":7275.45,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"AppUp","unpaid":1402.09,"total_fee":6115.29,"total_paid":4713.2,"cond_amount":true,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":true,"status":"San sang TT","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T9/2025","T10/2025","T11/2025","T12/2025","T2/2026","T3/2026"]},{"name":"Chong Da","unpaid":1203.49,"total_fee":7318.39,"total_paid":6114.9,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T10/2024","T11/2024","T12/2024","T1/2025","T9/2025"]},{"name":"Addtitans Digital Pvt Ltd","unpaid":803.71,"total_fee":3586.99,"total_paid":2783.28,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T6/2025","T12/2025","T1/2026"]},{"name":"Hehemobi","unpaid":778.88,"total_fee":2523.26,"total_paid":1744.38,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"Ch\u01b0a c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T3/2026"]},{"name":"AppPush","unpaid":755.14,"total_fee":755.14,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T7/2024","T8/2024","T9/2024","T10/2024","T11/2024"]},{"name":"TrackBack Media","unpaid":665.65,"total_fee":10750.62,"total_paid":10084.98,"cond_amount":true,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":true,"status":"San sang TT","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T3/2026"]},{"name":"Flexmedia","unpaid":643.57,"total_fee":18576.82,"total_paid":17933.25,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"Ch\u01b0a c\u00f3 PL","months_unpaid":["T3/2026"]},{"name":"Performance Launchpad","unpaid":437.01,"total_fee":437.01,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T12/2024","T12/2025","T1/2026","T2/2026"]},{"name":"HongkongCombineMedia","unpaid":303.65,"total_fee":303.65,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"Alas Mobile","unpaid":279.84,"total_fee":784.6,"total_paid":504.76,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T1/2025","T5/2025","T6/2025","T8/2025","T9/2025","T12/2025"]},{"name":"Cloven Media 14759","unpaid":256.25,"total_fee":256.25,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"HoneyComb","unpaid":254.07,"total_fee":254.07,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T10/2024","T9/2025"]},{"name":"Mobiaviator","unpaid":206.25,"total_fee":206.25,"total_paid":0,"cond_amount":true,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"PRODIGIOUS","unpaid":194.4,"total_fee":194.4,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2024","T5/2024","T7/2024"]},{"name":"AppMobo","unpaid":173.38,"total_fee":3946.13,"total_paid":3772.75,"cond_amount":false,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":false,"status":"Chua du $200","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T3/2026"]},{"name":"Adsflourish 14085","unpaid":166.5,"total_fee":166.5,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"ErinLabs","unpaid":160.22,"total_fee":160.22,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T7/2024","T8/2024","T10/2024","T9/2025","T10/2025","T3/2026"]},{"name":"Clickonik","unpaid":158.02,"total_fee":158.02,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T11/2024","T1/2025","T2/2025","T3/2025","T5/2025","T6/2025"]},{"name":"Perfologix","unpaid":136.56,"total_fee":136.56,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2024","T8/2025","T9/2025","T10/2025","T3/2026"]},{"name":"Flickstree","unpaid":114.68,"total_fee":1424.17,"total_paid":1309.49,"cond_amount":false,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":false,"status":"Chua du $200","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2026","T3/2026"]},{"name":"Quick Ads Media","unpaid":106.8,"total_fee":106.8,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T6/2024","T7/2024","T8/2024","T12/2024","T3/2025","T11/2025"]},{"name":"Appflix","unpaid":101.9,"total_fee":101.9,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T6/2024","T7/2024","T8/2024","T9/2024","T10/2024","T1/2025"]},{"name":"Performance launchpad","unpaid":75.05,"total_fee":75.05,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":false,"status":"Chua du $200","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T8/2023","T9/2023","T10/2023","T11/2023","T12/2023"]},{"name":"Occuad","unpaid":70.5,"total_fee":70.5,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T12/2023","T1/2024"]},{"name":"Marversal","unpaid":47.0,"total_fee":47.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T12/2023","T1/2024","T2/2024","T3/2024","T4/2024","T9/2024"]},{"name":"Moca","unpaid":42.9,"total_fee":42.9,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T12/2023","T10/2024","T4/2025"]},{"name":"Valueleaf","unpaid":40.0,"total_fee":40.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024","T6/2024","T7/2024","T8/2024"]},{"name":"Opicle Media","unpaid":39.9,"total_fee":39.9,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024","T6/2024","T7/2024","T2/2025"]},{"name":"Cashlelo","unpaid":37.56,"total_fee":37.56,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T6/2024","T5/2025","T6/2025","T9/2025"]},{"name":"MediaxPedia","unpaid":37.5,"total_fee":37.5,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024"]},{"name":"Gladmobi","unpaid":35.9,"total_fee":35.9,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024","T6/2024","T8/2024","T2/2025"]},{"name":"Entravision","unpaid":35.7,"total_fee":73.7,"total_paid":38.0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"Pub Vi\u1ec7t Nam","months_unpaid":["T4/2024","T5/2024","T10/2024"]},{"name":"Tarsan Mvas","unpaid":34.63,"total_fee":34.63,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T3/2024","T4/2024","T8/2024","T2/2026","T3/2026"]},{"name":"ReTagAds","unpaid":31.65,"total_fee":31.65,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2026","T3/2026"]},{"name":"Adworks365","unpaid":27.17,"total_fee":1682.26,"total_paid":1655.09,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2025"]},{"name":"Expansion Ads","unpaid":22.0,"total_fee":22.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T3/2024","T4/2024","T5/2024","T7/2024","T8/2024"]},{"name":"Adzjunction","unpaid":16.82,"total_fee":640.73,"total_paid":623.91,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T10/2025","T11/2025","T2/2026"]},{"name":"Adsflourish 14998","unpaid":16.2,"total_fee":2124.5,"total_paid":2108.3,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T10/2024","T11/2024","T12/2024","T10/2025","T12/2025","T1/2026"]},{"name":"AppFlix","unpaid":12.0,"total_fee":12.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2024"]},{"name":"Aterru","unpaid":11.9,"total_fee":519.4,"total_paid":507.5,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2024","T7/2024","T10/2024"]},{"name":"Yomolabs","unpaid":11.31,"total_fee":3361.56,"total_paid":3350.25,"cond_amount":false,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":false,"status":"Chua du $200","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2026","T3/2026"]},{"name":"Westmobi","unpaid":10.85,"total_fee":240.0,"total_paid":229.15,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T1/2026","T2/2026"]},{"name":"Kormzi","unpaid":10.0,"total_fee":10.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T3/2024","T4/2024","T6/2024","T9/2024"]},{"name":"MadOps","unpaid":7.4,"total_fee":7.4,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024"]},{"name":"Lynkbase","unpaid":4.0,"total_fee":4.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2024","T6/2024"]},{"name":"CubicAds","unpaid":3.7,"total_fee":3.7,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024","T7/2024"]},{"name":"Adsile Media","unpaid":2.0,"total_fee":2.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2024"]},{"name":"Antiek Digital Media","unpaid":2.0,"total_fee":2.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024"]},{"name":"Uamax","unpaid":2.0,"total_fee":2.0,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T5/2024"]},{"name":"Appmontize","unpaid":1.7,"total_fee":1.7,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T8/2023"]},{"name":"Adsvigor","unpaid":1.3,"total_fee":1.3,"total_paid":0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T8/2023"]},{"name":"Adbink","unpaid":0.0,"total_fee":2996.62,"total_paid":2996.62,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"JustDo","unpaid":-0.0,"total_fee":6917.46,"total_paid":6917.46,"cond_amount":false,"cond_inv":true,"cond_hd":true,"cond_pl":true,"ready":false,"status":"Chua du $200","hd":"\u0110\u00e3 c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"Reclame","unpaid":0.0,"total_fee":378.55,"total_paid":378.55,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"ClickWise","unpaid":-0.0,"total_fee":5396.78,"total_paid":5396.78,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"AdStalk","unpaid":0.0,"total_fee":261.26,"total_paid":261.26,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"JMVAS","unpaid":0.0,"total_fee":235.53,"total_paid":235.53,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":[]},{"name":"HongKongCombineMedia","unpaid":-294.05,"total_fee":213.95,"total_paid":508.0,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T4/2024"]},{"name":"Touchpoint","unpaid":-1327.53,"total_fee":21761.92,"total_paid":23089.45,"cond_amount":false,"cond_inv":true,"cond_hd":false,"cond_pl":true,"ready":false,"status":"Chua du $200 | Thieu HD","hd":"Ch\u01b0a c\u00f3","missing_inv":[],"missing_pl":[],"missing_paypal":false,"note_raw":"","months_unpaid":["T2/2026","T3/2026"]}],"stats":{"total":67,"ready":5,"missing_inv":0,"missing_hd":57,"missing_pl":0,"total_unpaid":28280.41,"total_paid_this_month":7906.4,"count_paid_this_month":4},"paid_history":{"Addtitans Digital Pvt Ltd":[{"month":"12/2023","fee":438.55,"paid":1764.95},{"month":"02/2025","fee":338.11,"paid":649.43},{"month":"05/2025","fee":69.45,"paid":368.9}],"Adbink":[{"month":"06/2023","fee":517.66,"paid":710.24},{"month":"07/2023","fee":1270.3,"paid":1270.3},{"month":"03/2024","fee":10.8,"paid":1016.08}],"Paddle Waver":[{"month":"08/2023","fee":262.05,"paid":354.15},{"month":"11/2024","fee":39.14,"paid":215.99},{"month":"12/2024","fee":30.4,"paid":30.4}],"AppUp":[{"month":"09/2023","fee":818.35,"paid":2375.95},{"month":"01/2024","fee":12.5,"paid":2337.25}],"TouchPoint":[{"month":"02/2024","fee":2968.0,"paid":7275.45}],"Touchpoint":[{"month":"06/2024","fee":3590.4,"paid":8515.65},{"month":"08/2024","fee":3579.5,"paid":5796.3},{"month":"09/2024","fee":3909.3,"paid":3909.3},{"month":"11/2024","fee":1604.65,"paid":3006.35},{"month":"01/2025","fee":82.75,"paid":640.69},{"month":"01/2026","fee":73.34,"paid":1221.16}],"TrackBack Media":[{"month":"02/2024","fee":227.4,"paid":2943.7},{"month":"05/2025","fee":458.66,"paid":1975.72},{"month":"08/2025","fee":1231.3,"paid":2838.33},{"month":"02/2026","fee":247.1,"paid":2327.23}],"JustDo":[{"month":"09/2023","fee":1159.1,"paid":1283.0},{"month":"10/2023","fee":2166.6,"paid":2166.6},{"month":"12/2023","fee":1196.2,"paid":2291.15},{"month":"02/2024","fee":90.75,"paid":962.4},{"month":"10/2025","fee":43.61,"paid":214.31}],"Newcoinmedia":[{"month":"02/2024","fee":1086.0,"paid":3669.2},{"month":"08/2025","fee":237.5,"paid":1716.96},{"month":"10/2025","fee":151.72,"paid":390.84},{"month":"01/2026","fee":150.2,"paid":863.46}],"Chong Da":[{"month":"12/2023","fee":513.7,"paid":2892.1},{"month":"04/2024","fee":906.05,"paid":2119.65},{"month":"07/2024","fee":635.7,"paid":1103.15}],"Yomolabs":[{"month":"04/2025","fee":991.61,"paid":2954.55},{"month":"01/2026","fee":12.92,"paid":395.7}],"Flickstree":[{"month":"10/2025","fee":154.0,"paid":874.39},{"month":"01/2026","fee":72.68,"paid":435.1}],"HongKongCombineMedia":[{"month":"03/2024","fee":16.8,"paid":508.0}],"Digitar Media":[{"month":"01/2024","fee":56.25,"paid":212.5},{"month":"07/2024","fee":1000.6,"paid":1828.65},{"month":"08/2024","fee":1377.6,"paid":1401.6},{"month":"01/2026","fee":168.34,"paid":408.38}],"Alas Mobile":[{"month":"01/2024","fee":231.25,"paid":231.25},{"month":"12/2024","fee":273.5,"paid":273.51}],"Aterru":[{"month":"03/2024","fee":20.0,"paid":507.5}],"Reclame":[{"month":"06/2024","fee":4.0,"paid":378.55}],"ClickWise":[{"month":"03/2024","fee":1155.0,"paid":1841.05},{"month":"05/2024","fee":2226.0,"paid":2905.0}],"AdStalk":[{"month":"02/2025","fee":3.8,"paid":261.26}],"Prodflicks":[{"month":"05/2024","fee":98.0,"paid":732.15}],"Hehemobi":[{"month":"04/2024","fee":287.5,"paid":287.5},{"month":"02/2026","fee":491.15,"paid":1456.88}],"Flexmedia":[{"month":"02/2025","fee":1214.86,"paid":3361.43},{"month":"05/2025","fee":1645.31,"paid":3338.69},{"month":"06/2025","fee":1850.7,"paid":1850.7},{"month":"08/2025","fee":1677.19,"paid":3516.39},{"month":"09/2025","fee":1005.47,"paid":1005.47},{"month":"01/2026","fee":742.39,"paid":4054.78},{"month":"02/2026","fee":805.79,"paid":805.79}],"Entravision":[{"month":"03/2024","fee":38.0,"paid":38.0}],"Oodle Digital":[{"month":"03/2025","fee":465.81,"paid":540.12}],"Westmobi":[{"month":"10/2025","fee":6.46,"paid":229.15}],"Adworks365":[{"month":"12/2024","fee":18.81,"paid":1655.09}],"AppMobo":[{"month":"05/2024","fee":456.25,"paid":456.25},{"month":"02/2026","fee":267.71,"paid":3316.5}],"Adzjunction":[{"month":"08/2025","fee":9.98,"paid":623.91}],"JMVAS":[{"month":"08/2025","fee":63.18,"paid":235.53}],"Adsflourish 14998":[{"month":"04/2024","fee":362.5,"paid":904.0},{"month":"05/2024","fee":612.5,"paid":612.5},{"month":"09/2024","fee":591.8,"paid":591.8}]},"latest_paid_month":"02/2026","paid_this_month":[{"name":"AppMobo","month":"02/2026","fee":267.71,"paid":3316.5},{"name":"TrackBack Media","month":"02/2026","fee":247.1,"paid":2327.23},{"name":"Hehemobi","month":"02/2026","fee":491.15,"paid":1456.88},{"name":"Flexmedia","month":"02/2026","fee":805.79,"paid":805.79}]}
+let DATA=JSON.parse(JSON.stringify(EMBEDDED));
+let filterVal='all',searchQ='',sortVal='unpaid-desc';
+
+function fmt(n){return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function ck(ok){return '<span class="ck '+(ok?'ok':'no')+'">'+(ok?'&#x2713;':'&#x2717;')+'</span>';}
+function badge(p){
+  if(p.ready)return '<span class="badge b-ready">&#x2705; San sang TT</span>';
+  if(!p.cond_amount)return '<span class="badge b-amount">Chua du $200</span>';
+  var m=[];
+  if(!p.cond_inv)m.push('INV');
+  if(!p.cond_hd)m.push('HD');
+  if(!p.cond_pl)m.push('PL');
+  return '<span class="badge '+(m.length>=2?'b-danger':'b-warn')+'">&#x26A0; Thieu '+m.join(', ')+'</span>';
+}
+
+function renderKPIs(){
+  var s=DATA.stats;
+  document.getElementById('kpis').innerHTML=
+    '<div class="kpi red"><div class="kpi-val" style="color:var(--red)">'+fmt(s.total_unpaid)+'</div><div class="kpi-lbl">Chua thanh toan</div><div class="kpi-sub">'+s.total+' partners</div></div>'+
+    '<div class="kpi green"><div class="kpi-val" style="color:var(--green)">'+s.ready+'</div><div class="kpi-lbl">San sang TT</div><div class="kpi-sub">du 4 dieu kien</div></div>'+
+    '<div class="kpi yellow"><div class="kpi-val" style="color:var(--yellow)">'+s.missing_inv+'</div><div class="kpi-lbl">Thieu Invoice</div></div>'+
+    '<div class="kpi blue"><div class="kpi-val" style="color:var(--blue)">'+s.missing_hd+'</div><div class="kpi-lbl">Thieu HĐ</div></div>'+
+    '<div class="kpi purple"><div class="kpi-val" style="color:var(--purple)">'+s.missing_pl+'</div><div class="kpi-lbl">Thieu PL</div></div>'+
+    '<div class="kpi orange"><div class="kpi-val" style="color:var(--orange)">'+DATA.partners.filter(function(p){return !p.cond_amount;}).length+'</div><div class="kpi-lbl">Chua du $200</div></div>'+
+    '<div class="kpi green"><div class="kpi-val" style="color:var(--green)">'+fmt(DATA.stats.total_paid_this_month||0)+'</div><div class="kpi-lbl">Da TT thang '+( DATA.latest_paid_month||'')+'</div><div class="kpi-sub">'+(DATA.stats.count_paid_this_month||0)+' partners</div></div>';
+}
+
+function getFiltered(){
+  return DATA.partners.filter(function(p){
+    var q=searchQ.toLowerCase();
+    return(!q||p.name.toLowerCase().includes(q))&&(
+      filterVal==='all'||
+      (filterVal==='ready'&&p.ready)||
+      (filterVal==='inv'&&!p.cond_inv)||
+      (filterVal==='hd'&&!p.cond_hd)||
+      (filterVal==='pl'&&p.missing_pl&&p.missing_pl.length>0)||
+      (filterVal==='amount'&&!p.cond_amount));
+  }).sort(function(a,b){
+    if(sortVal==='unpaid-desc')return b.unpaid-a.unpaid;
+    if(sortVal==='unpaid-asc')return a.unpaid-b.unpaid;
+    if(sortVal==='name-asc')return a.name.localeCompare(b.name);
+    if(sortVal==='pl-desc')return(b.missing_pl||[]).length-(a.missing_pl||[]).length;
+    return 0;
+  });
+}
+
+function render(){
+  var rows=getFiltered();
+  document.getElementById('resultCount').textContent=rows.length+' / '+DATA.partners.length+' partners';
+  document.getElementById('tbody').innerHTML=rows.map(function(p){
+    var plHtml='';
+    if(p.missing_pl&&p.missing_pl.length>0){
+      plHtml=p.missing_pl.length<=2
+        ?p.missing_pl.map(function(pl){return '<span class="pl-tag">'+pl.campaign+(pl.amount?' <span style="color:var(--orange)">'+pl.amount+'</span>':'')+'</span>';}).join('')
+        :'<span class="pl-count">'+p.missing_pl.length+' PL</span>';
+    }else{plHtml=ck(true);}
+    return '<tr onclick="openModal('+JSON.stringify(p.name)+')">'+
+      '<td class="sticky">'+p.name+'</td>'+
+      '<td class="mono right" style="color:var(--red);font-weight:700">'+fmt(p.unpaid)+'</td>'+
+      '<td class="mono right" style="color:var(--muted2)">'+fmt(p.total_fee)+'</td>'+
+      '<td class="mono right" style="color:var(--green)">'+fmt(p.total_paid)+'</td>'+
+      '<td class="center">'+ck(p.cond_amount)+'</td>'+
+      '<td class="center">'+ck(p.cond_inv)+'</td>'+
+      '<td class="center">'+ck(p.cond_hd)+'</td>'+
+      '<td>'+plHtml+'</td>'+
+      '<td>'+badge(p)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function renderPLTab(){
+  var campMap={};
+  DATA.partners.forEach(function(p){(p.missing_pl||[]).forEach(function(pl){if(!campMap[pl.campaign])campMap[pl.campaign]=0;campMap[pl.campaign]++;});});
+  var camps=Object.keys(campMap).sort(function(a,b){return campMap[b]-campMap[a];});
+  document.getElementById('plCards').innerHTML=
+    '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:8px">Theo campaign:</div>'+
+    '<div class="pl-camp-cards">'+camps.map(function(c){
+      return '<div class="pl-camp-card"><div class="pl-camp-name">'+c+'</div><div class="pl-camp-count">'+campMap[c]+'</div><div class="pl-camp-lbl">partners thieu</div></div>';
+    }).join('')+'</div>';
+  var rows=[];
+  DATA.partners.forEach(function(p){(p.missing_pl||[]).forEach(function(pl){rows.push({partner:p.name,campaign:pl.campaign,amount:pl.amount,unpaid:p.unpaid,hd:p.cond_hd});});});
+  rows.sort(function(a,b){return b.unpaid-a.unpaid;});
+  document.getElementById('plTbody').innerHTML=rows.map(function(r){
+    return '<tr onclick="openModal('+JSON.stringify(r.partner)+')">'+
+      '<td class="sticky">'+r.partner+'</td>'+
+      '<td><span style="background:var(--blue-bg);border:1px solid var(--blue-dim);border-radius:4px;padding:2px 7px;font-size:10px;color:var(--blue);font-family:monospace">'+r.campaign+'</span></td>'+
+      '<td class="mono" style="color:var(--orange)">'+(r.amount||'&mdash;')+'</td>'+
+      '<td class="mono right" style="color:var(--red);font-weight:700">'+fmt(r.unpaid)+'</td>'+
+      '<td class="center">'+ck(r.hd)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+
+function expandInvMonths(raw) {
+  var results = [];
+  var m = raw.trim().match(/^T([\d\-\u2013]+)(?:[.\/\s](\d{4}))?/);
+  if (!m) { results.push(raw.trim()); return results; }
+  var year = m[2] || '';
+  var parts = m[1].split(/[-\u2013]/);
+  for (var i = 0; i < parts.length; i++) {
+    var mn = parts[i].trim();
+    if (mn) results.push('T' + mn + (year ? '/' + year : ''));
+  }
+  return results;
+}
+
+function expandAllInvMonths(missing_inv) {
+  var all = [];
+  (missing_inv || []).forEach(function(raw) {
+    expandInvMonths(raw).forEach(function(m) { all.push(m); });
+  });
+  return all;
+}
+
+function renderINVTab(){
+  var rows=DATA.partners.filter(function(p){return p.missing_inv&&p.missing_inv.length>0;}).sort(function(a,b){return b.unpaid-a.unpaid;});
+  document.getElementById('invTbody').innerHTML=rows.map(function(p){
+    var invMonths = p.missing_inv && p.missing_inv.length
+      ? expandAllInvMonths(p.missing_inv).map(function(m){ return '<span style="background:var(--yellow-bg);border:1px solid var(--yellow-dim);border-radius:3px;padding:1px 7px;font-size:10px;color:var(--yellow);font-family:monospace;margin:1px 2px;display:inline-block">'+m+'</span>'; }).join(' ')
+      : '<span style="color:var(--muted)">—</span>';
+    return '<tr onclick="openModal('+JSON.stringify(p.name)+')">'+
+      '<td class="sticky">'+p.name+'</td>'+
+      '<td class="mono right" style="color:var(--red);font-weight:700">'+fmt(p.unpaid)+'</td>'+
+      '<td>'+invMonths+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function openModal(name){
+  var p=DATA.partners.find(function(x){return x.name===name;});
+  if(!p)return;
+  document.getElementById('mTitle').textContent=p.name;
+  document.getElementById('mAmounts').innerHTML=
+    '<div class="m-amt"><div class="m-amt-val" style="color:var(--red)">'+fmt(p.unpaid)+'</div><div class="m-amt-lbl">Chua thanh toan</div></div>'+
+    '<div class="m-amt"><div class="m-amt-val" style="color:var(--muted2)">'+fmt(p.total_fee)+'</div><div class="m-amt-lbl">Tong fee</div></div>'+
+    '<div class="m-amt"><div class="m-amt-val" style="color:var(--green)">'+fmt(p.total_paid)+'</div><div class="m-amt-lbl">Da thanh toan</div></div>';
+  document.getElementById('mConds').innerHTML=[
+    {ok:p.cond_amount,name:'Du >= $200',detail:p.cond_amount?'Du no: '+fmt(p.unpaid):'Chua du nguong $200'},
+    {ok:p.cond_inv,name:'Co Invoice',detail:p.cond_inv?'Da co invoice':'Thieu: '+(p.missing_inv&&p.missing_inv.length?expandAllInvMonths(p.missing_inv).join(', '):'chua xac dinh')},
+    {ok:p.cond_hd,name:'Hop dong',detail:p.cond_hd?'Da co HĐ':'Chua co hop dong'},
+    {ok:p.cond_pl,name:'Phu luc',detail:p.cond_pl?'Du phu luc':(p.missing_pl&&p.missing_pl.length?'Thieu '+p.missing_pl.length+' PL':'Chua xac dinh')},
+  ].map(function(c){
+    return '<div class="cond-box '+(c.ok?'ok':'no')+'">'+
+      '<div style="font-size:15px;margin-bottom:3px">'+(c.ok?'&#x2705;':'&#x274C;')+'</div>'+
+      '<div class="cond-name">'+c.name+'</div>'+
+      '<div class="cond-detail">'+c.detail+'</div></div>';
+  }).join('');
+  var plHtml='';
+  if(p.missing_pl&&p.missing_pl.length>0){
+    plHtml='<div class="pl-list"><div class="pl-list-title">&#x1F4CE; PL con thieu ('+p.missing_pl.length+'):</div>'+
+      p.missing_pl.map(function(pl){
+        return '<div class="pl-row"><span style="font-size:11px;font-weight:600">&#x274C; '+pl.campaign+'</span>'+
+          '<span style="font-size:11px;font-family:monospace;color:var(--orange)">'+(pl.amount||'')+'</span></div>';
+      }).join('')+'</div>';
+  }
+  document.getElementById('mPL').innerHTML=plHtml;
+  var extra='';
+  if(p.months_unpaid&&p.months_unpaid.length)extra+='<div class="modal-note">&#x1F4C5; Thang chua TT: '+p.months_unpaid.join(' &middot; ')+'</div>';
+  if(p.note_raw)extra+='<div class="modal-note">&#x1F4DD; '+p.note_raw+'</div>';
+  if(p.ready)extra+='<div class="ready-banner">&#x2705; Du dieu kien — Co the xu ly thanh toan ngay!</div>';
+  document.getElementById('mExtra').innerHTML=extra;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('open');}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',['overview','pl','inv'][i]===name);});
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='pl')renderPLTab();
+  if(name==='inv')renderINVTab();
+  if(name==='paid')renderPaidTab(selectedPaidMonth);
+}
+function onSearch(v){searchQ=v;render();}
+function setFilter(btn){
+  document.querySelectorAll('.fbtn[data-f]').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');filterVal=btn.dataset.f;render();
+}
+
+function applyData(d){
+  DATA=d;
+  renderKPIs();render();
+  document.getElementById('syncStatus').textContent='Synced: '+new Date().toLocaleString('vi-VN');
+}
+
+function fetchFromUrl(url,onOk,onErr){
+  var cb='gscb_'+Date.now();
+  var el=document.createElement('script');
+  var t=setTimeout(function(){cleanup();onErr&&onErr('Timeout');},15000);
+  function cleanup(){clearTimeout(t);delete window[cb];el.parentNode&&el.parentNode.removeChild(el);}
+  window[cb]=function(d){cleanup();onOk(d);};
+  el.onerror=function(){cleanup();fetch(url).then(function(r){return r.json();}).then(onOk).catch(function(e){onErr&&onErr(e.message);});};
+  el.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+  document.head.appendChild(el);
+}
+
+function loadFromApi(){
+  var url=document.getElementById('apiUrl').value.trim();
+  if(!url)return alert('Nhap Apps Script URL');
+  localStorage.setItem(STORAGE_KEY,url);
+  var btn=document.getElementById('loadBtn');
+  btn.textContent='&#x23F3;...';btn.disabled=true;
+  document.getElementById('syncStatus').textContent='Dang sync...';
+  fetchFromUrl(url,
+    function(d){applyData(d);btn.textContent='&#x1F504; Sync';btn.disabled=false;},
+    function(e){btn.textContent='&#x1F504; Sync';btn.disabled=false;document.getElementById('syncStatus').textContent='Loi: '+e;}
+  );
+}
+
+function exportExcel(){
+  function doExport(){
+    var rows=getFiltered();
+    var h1=['Partner','Chua TT (USD)','Tong Fee','Da TT','>=200$','Invoice','Hop dong','PL con thieu','Trang thai'];
+    var d1=rows.map(function(p){
+      return[p.name,p.unpaid,p.total_fee,p.total_paid,p.cond_amount?'V':'X',p.cond_inv?'V':'X',p.cond_hd?'V':'X',
+        (p.missing_pl||[]).map(function(x){return x.campaign+(x.amount?' '+x.amount:'');}).join('; ')||'OK',p.status];
+    });
+    var h2=['Partner','Campaign thieu PL','So tien PL','Du no'];
+    var d2=[];
+    DATA.partners.forEach(function(p){(p.missing_pl||[]).forEach(function(pl){d2.push([p.name,pl.campaign,pl.amount||'',p.unpaid]);});});
+    var h3=['Partner','Du no','Thang chua TT'];
+    var d3=DATA.partners.filter(function(p){return p.months_unpaid&&p.months_unpaid.length;})
+      .map(function(p){return[p.name,p.unpaid,p.months_unpaid.join(', ')];});
+    var wb=XLSX.utils.book_new();
+    function mkSheet(h,d,cols){var ws=XLSX.utils.aoa_to_sheet([h].concat(d));ws['!cols']=cols;return ws;}
+    XLSX.utils.book_append_sheet(wb,mkSheet(h1,d1,[{wch:22},{wch:14},{wch:12},{wch:12},{wch:8},{wch:10},{wch:10},{wch:35},{wch:20}]),'Tong quan');
+    XLSX.utils.book_append_sheet(wb,mkSheet(h2,d2,[{wch:22},{wch:22},{wch:12},{wch:14}]),'Phu luc con thieu');
+    XLSX.utils.book_append_sheet(wb,mkSheet(h3,d3,[{wch:22},{wch:14},{wch:30}]),'Thang chua TT');
+    XLSX.writeFile(wb,'Payment_Dashboard_'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'.xlsx');
+  }
+  if(window.XLSX){doExport();return;}
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=doExport;document.head.appendChild(s);
+}
+
+
+var selectedPaidMonth = DATA.latest_paid_month || '';
+
+function renderPaidTab(month) {
+  if(!month) month = DATA.latest_paid_month || '';
+  selectedPaidMonth = month;
+  
+  // Month buttons
+  var months = Object.keys(DATA.paid_history||{}).reduce(function(acc,name){
+    (DATA.paid_history[name]||[]).forEach(function(r){if(acc.indexOf(r.month)<0)acc.push(r.month);});
+    return acc;
+  },[]).sort(function(a,b){
+    var pa=a.split('/'),pb=b.split('/');
+    return (parseInt(pb[1])*100+parseInt(pb[0]))-(parseInt(pa[1])*100+parseInt(pa[0]));
+  }).slice(0,6);
+  
+  document.getElementById('paidMonthBtns').innerHTML=months.map(function(m){
+    return '<button onclick="renderPaidTab(\'' +m+ '\')" style="padding:3px 10px;border-radius:20px;border:1px solid '+(m===month?'var(--green)':'var(--border2)')+';background:'+(m===month?'var(--green-bg)':'transparent')+';color:'+(m===month?'var(--green)':'var(--muted2)')+';font-family:monospace;font-size:11px;cursor:pointer">'+m+'</button>';
+  }).join('');
+  
+  // Get records for selected month
+  var records=[];
+  Object.keys(DATA.paid_history||{}).forEach(function(name){
+    (DATA.paid_history[name]||[]).forEach(function(r){
+      if(r.month===month) records.push({name:name,month:r.month,fee:r.fee,paid:r.paid});
+    });
+  });
+  records.sort(function(a,b){return b.paid-a.paid;});
+  
+  var totalPaid=records.reduce(function(s,r){return s+r.paid;},0);
+  document.getElementById('paidMonthLabel').innerHTML=
+    'Thang <strong style="color:var(--accent2)">'+month+'</strong> &nbsp;|&nbsp; '+records.length+' partners &nbsp;|&nbsp; Tong: <strong style="color:var(--green)">'+fmt(totalPaid)+'</strong>';
+  
+  document.getElementById('paidTbody').innerHTML=records.map(function(r){
+    return '<tr onclick="openModal('+JSON.stringify(r.name)+')">'+
+      '<td class="sticky">'+r.name+'</td>'+
+      '<td class="mono" style="color:var(--muted2)">'+r.month+'</td>'+
+      '<td class="mono right" style="color:var(--green);font-weight:700">'+fmt(r.paid)+'</td>'+
+      '<td class="mono right" style="color:var(--muted2)">'+fmt(r.fee)+'</td>'+
+    '</tr>';
+  }).join('');
+  
+  document.getElementById('paidSummary').textContent=records.length+' partners da duoc thanh toan trong thang '+month;
+}
+
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+renderKPIs();render();
+
+var saved=localStorage.getItem(STORAGE_KEY);
+if(saved){
+  document.getElementById('apiUrl').value=saved;
+  document.getElementById('syncStatus').textContent='Auto-syncing...';
+  fetchFromUrl(saved,applyData,function(){document.getElementById('syncStatus').textContent='Auto-sync failed, dung data cu';});
+}
+</script>
+</body>
+</html>
